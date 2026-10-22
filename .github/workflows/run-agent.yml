@@ -1,0 +1,36 @@
+name: RESET AI Agent Free Cron
+
+on:
+  schedule:
+    # Berjalan otomatis setiap 30 menit (Jadwal gratis yang aman)
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Memunculkan tombol untuk menyalakan manual saat uji coba
+
+jobs:
+  mine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ambil Kode Repo
+        uses: actions/checkout@v4
+
+      - name: Siapkan Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Dependencies
+        run: |
+          cd signer
+          npm ci
+
+      - name: Jalankan Agent Mining
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          RESET_SIGNER_PASSWORD: ${{ secrets.RESET_SIGNER_PASSWORD }}
+        run: |
+          cd signer
+          # Membuat wallet otomatis jika belum ada sebelum menambang
+          node bin/reset-signer.mjs init || true
+          
+          # Menjalankan agent dengan model Llama 3.1 8B Instruct yang disediakan gratis oleh OpenRouter
+          node bin/reset-signer.mjs agent --role mine --provider openrouter --model meta-llama/llama-3.1-8b-instruct:free
